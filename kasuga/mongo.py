@@ -19,35 +19,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import CaboCha
+from pymongo import MongoClient
 
-class Parser:
-    def __init__(self, text):
-        self.text = text
+mongodbHostName = 'localhost'
+mongodbPortNo = 27017
 
-    def parse(self):
-        tokens = []
-        c = CaboCha.Parser()
-        tree = c.parse(self.text)
+class Mongo:
+    def __init__(self, name):
+        self.name = name
+        client = MongoClient(mongodbHostName, mongodbPortNo)
+        db = client.kasuga
+        self.contexts = db.contexts
 
-        for i in range(tree.token_size()):
-            token = tree.token(i)
-            tmp = {"surface": token.surface, "normalized": token.normalized_surface, "feature": token.feature}
-            tokens.append(tmp)
-
-        for i in range(tree.chunk_size()):
-            chunk = tree.chunk(i)
-            print('Chunk:', i)
-            print(' Link:', chunk.link)
-            for j in range(chunk.token_pos, (chunk.token_pos + chunk.token_size)):
-                print("   Surface: " + tokens[j]["surface"])
-            print(' Head:', chunk.head_pos)  # 主辞
-            print(' Func:', chunk.func_pos)  # 機能語
-
-
-'''
-    main
-'''
-if __name__ == "__main__":
-    p = Parser("私の名前は中野です。")
-    p.parse()
+    def regist(self, context):
+        count = self.contexts.find({"Name": self.name, "Body": context["Body"]}).count()
+        if count == 0:
+            self.contexts.insert({"Name": self.name, "Body": context["Body"], "Phase": context["Phase"]})
