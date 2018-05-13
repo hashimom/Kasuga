@@ -14,9 +14,9 @@ kasuga -f test.txt
 ### MongoDB 出力先
 * DB名：　kasuga
 * Collection名：
-** contexts : 形態素解析情報
-** phases : 文節情報
-** words : 単語情報
+    * contexts : 形態素解析情報
+    * phases : 文節情報
+    * words : 単語情報
 
 現仕様では、 localhost の 27017 番ポートの MongoDB のみを出力先としています。
 
@@ -79,7 +79,7 @@ kasuga -f test.txt
 ```
 
 #### Collections : phases
-文節情報を登録します。
+文節単位で、文節情報を登録します。
 
 ```
 {
@@ -110,7 +110,7 @@ kasuga -f test.txt
 ```
 
 #### Collections : words
-単語情報を登録します。
+単語単位で、単語情報を登録します。
 
 ```
 {
