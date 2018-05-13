@@ -24,7 +24,7 @@ import setuptools
 if __name__ == "__main__":
     setuptools.setup(
         name='kasuga',
-        version='0.1.0',
+        version='0.2.0',
         description='Text to Json(MongoDB) script.',
         author='hashimom',
         author_email='hashimom@geeko.jp',

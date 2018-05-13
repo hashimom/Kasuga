@@ -24,7 +24,9 @@ import jaconv
 
 class Parser:
     def __init__(self, text):
-        self.context = {"Body": text, "Phase": []}
+        self.text = text
+        self.context = {"Body": text, "Words": []}
+        self.phases = []
 
     def parse(self):
         c = CaboCha.Parser()
@@ -53,7 +55,7 @@ class Parser:
         # 文節情報生成
         for i in range(tree.chunk_size()):
             chunk = tree.chunk(i)
-            phase = {"Index": i, "Independent": {}, "Ancillary": None, "Link": None}
+            phase = {"Independent": {}, "Ancillary": None, "Link": None}
             for j in range(chunk.token_pos, (chunk.token_pos + chunk.token_size)):
                 # 1: 自立語先頭
                 if len(phase["Independent"]) == 0:
@@ -83,19 +85,25 @@ class Parser:
                     phase["Ancillary"]["original"] = phase["Ancillary"]["original"] + tokens[j]["read"]
                     phase["Ancillary"]["read"] = phase["Ancillary"]["read"] + tokens[j]["read"]
 
-            self.context["Phase"].append(phase)
+            # 単語情報登録
+            self.context["Words"].append(phase["Independent"])
+            self.context["Words"].append(phase["Ancillary"])
+
+            # 文節情報登録
+            phase["Body"] = self.text
+            self.phases.append(phase)
 
         # 係り受け情報付与
         for i in range(tree.chunk_size()):
             link = tree.chunk(i).link
             if link != -1:
-                self.context["Phase"][i]["Link"] = self.context["Phase"][link]["Independent"]
+                self.phases[i]["Link"] = self.phases[link]["Independent"]
 
 
-        return(self.context)
+        return({"Context":self.context, "Phases":self.phases})
 
     def display(self):
-        for parse in self.context["Phase"]:
+        for parse in self.phases:
             print("Chunk: ")
             print(" Independent: " + parse["Independent"]["surface"] + "/" +
                   parse["Independent"]["read"] + " (" +

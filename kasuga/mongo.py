@@ -30,8 +30,19 @@ class Mongo:
         client = MongoClient(mongodbHostName, mongodbPortNo)
         db = client.kasuga
         self.contexts = db.contexts
+        self.phases = db.phases
+        self.words = db.words
 
-    def regist(self, context):
-        count = self.contexts.find({"Name": self.name, "Body": context["Body"]}).count()
-        if count == 0:
-            self.contexts.insert({"Name": self.name, "Body": context["Body"], "Phase": context["Phase"]})
+    def regist(self, info):
+        if self.contexts.find({"Name": self.name, "Body": info["Context"]["Body"]}).count() == 0:
+            # 形態素解析情報登録
+            self.contexts.insert({"Name": self.name, "Body": info["Context"]["Body"], "Words": info["Context"]["Words"]})
+
+            # 単語情報登録
+            for w in info["Context"]["Words"]:
+                if self.words.find(w).count() == 0:
+                    self.words.insert(w)
+
+            # 文節情報登録
+            for p in info["Phases"]:
+                self.phases.insert(p)

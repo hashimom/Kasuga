@@ -41,9 +41,9 @@ def main():
                 continue
 
             p = parser.Parser(context)
-            ret = p.parse()
+            info = p.parse()
             p.display()
 
             m = mongo.Mongo(args.f)
-            m.regist(ret)
+            m.regist(info)
 
