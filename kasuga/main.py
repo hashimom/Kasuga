@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2018 Masahiko Hashimoto <hashimom@geeko.jp>
+# Copyright (c) 2018-2019 Masahiko Hashimoto <hashimom@geeko.jp>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@ from . import mongo
 def main():
     aparser = argparse.ArgumentParser()
     aparser.add_argument('-f', nargs='?', help='input text file', required=True)
+    aparser.add_argument('-m', nargs='?', help='J.Depp Dic directory', required=True)
     args = aparser.parse_args()
 
     for line in open(args.f, 'r'):
@@ -40,9 +41,9 @@ def main():
             if len(context) == 0:
                 continue
 
-            p = parser.Parser(context)
-            info = p.parse()
-            p.display()
+            p = parser.Parser(args.m)
+            info = p.parse(context)
+            p.display(info)
 
             m = mongo.Mongo(args.f)
             m.regist(info)
