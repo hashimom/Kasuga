@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2018 Masahiko Hashimoto <hashimom@geeko.jp>
+# Copyright (c) 2018-2019 Masahiko Hashimoto <hashimom@geeko.jp>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,13 @@ import setuptools
 if __name__ == "__main__":
     setuptools.setup(
         name='kasuga',
-        version='0.2.0',
-        description='Text to Json(MongoDB) script.',
+        version='0.3.0',
+        description='Text to Json script.',
         author='hashimom',
         author_email='hashimom@geeko.jp',
         url='https://github.com/hashimom/Kasuga',
         license='MIT',
-        python_requires='>=3',
-        install_requires=['jaconv', 'pymongo'],
+        install_requires=['pyknp'],
         packages=setuptools.find_packages(),
         entry_points={
             'console_scripts': [

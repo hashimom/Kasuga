@@ -19,76 +19,68 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sys
-import subprocess
-import jdepp
-import jaconv
+from pyknp import KNP
 
 
 class Parser:
-    def __init__(self, dic_dir):
-        prg_opt = ["jdepp", "-m", dic_dir]
-        opt = jdepp.option(len(prg_opt), prg_opt)
-        self.parser = jdepp.parser(opt)
-        self.parser.init()
+    def __init__(self):
+        """
+        Parser class
+        """
+        self.knp = KNP()
 
-    def parse(self, text):
-        context = {"Body": text, "Words": []}
+    def __call__(self, text):
+        """
+        Parser
+        :param text: 入力テキスト
+        :return: 解析結果(辞書型)
+        """
         chunks = []
+        links = []
 
-        run_cmd = "echo \"" + text + "\" | mecab"
-        output = subprocess.check_output(run_cmd, shell=True)
-        s = self.parser.parse_from_postagged(output)
+        result = self.knp.parse(text)
 
         # 単語配列生成
-        chunk = {"Independent": [], "Ancillary": [], "Link": None, "Body": text}
-        for i in s.tokens():
-            # 文節先頭はそれまでを保存して最初から
-            if i.chunk_start and (len(chunk["Independent"]) != 0):
-                chunks.append(chunk)
-                chunk = {"Independent": [], "Ancillary": [], "Link": None, "Body": text}
+        for bnst in result.bnst_list():
+            chunk = {"Independent": [], "Ancillary": [], "Link": None}
 
-            token = i.str().decode('utf-8')
-            feature = i.feature.decode('utf-8').strip().split(',')
+            for mrph in bnst.mrph_list():
+                tmp = {"surface": mrph.midasi,
+                       "original": mrph.genkei,
+                       "read": mrph.yomi,
+                       "position": [mrph.hinsi, mrph.bunrui],
+                       "conjugate": [mrph.katuyou1, mrph.katuyou2]
+                       }
 
-            # 読み取得
-            if 7 < len(feature):
-                read = jaconv.kata2hira(feature[7])
-            else:
-                # featureの要素が7個存在しない場合は恐らく記号なのでsurfaceをそのまま使う
-                read = jaconv.kata2hira(token)
+                # 自立語
+                if tmp["position"][0] != "助詞" and \
+                        tmp["position"][0] != "助動詞" and \
+                        tmp["position"][0] != "判定詞" and \
+                        tmp["position"][0] != "特殊":
+                    chunk["Independent"].append(tmp)
 
-            tmp = {"surface": token,
-                   "original": feature[6],
-                   "read": read,
-                   "position": [feature[0], feature[1], feature[2], feature[3]],
-                   "conjugate": [feature[4], feature[5]] }
+                # 付属語先頭
+                else:
+                    chunk["Ancillary"].append(tmp)
 
-            # 自立語
-            if tmp["position"][0] != u"助詞" and \
-                    tmp["position"][0] != u"助動詞" and \
-                    tmp["position"][1] != u"句点" and \
-                    tmp["position"][1] != u"読点":
-                chunk["Independent"].append(tmp)
-
-            # 付属語先頭
-            else:
-                # 付属語の original は read で上書き
-                tmp["original"] = tmp["read"]
-                chunk["Ancillary"].append(tmp)
-
-        # 最後の文節をここで保存
-        chunks.append(chunk)
+            # 文節情報と係り受け情報を登録
+            chunks.append(chunk)
+            links.append(bnst.parent_id)
 
         # 係り受け情報付与
-        for i, chunk in enumerate(s.chunks()):
-            head = chunk.head()
-            if head:
-                chunks[i]["Link"] = chunks[head.id]["Independent"]
+        for parent_id, link_id in enumerate(links):
+            if link_id > 0:
+                chunks[parent_id]["Link"] = chunks[link_id]["Independent"]
 
-        return {"Context": context, "Chunks": chunks}
+        return {"Body": text, "Chunks": chunks}
 
-    def display(self, info):
+    @classmethod
+    def display(cls, info):
+        """
+        情報表示
+        :param info: 解析済み情報
+        :return:
+        """
         for parse in info["Chunks"]:
             print("Chunk: ")
 
@@ -126,6 +118,6 @@ if __name__ == "__main__":
     main
     
     """
-    p = Parser(sys.argv[1])
-    ret = p.parse("あひる焼きを食べればモリモリと元気が出るぞ")
+    p = Parser()
+    ret = p("あひる焼きを食べればモリモリと、元気が出るぞよ。")
     p.display(ret)

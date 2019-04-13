@@ -20,31 +20,27 @@
 # SOFTWARE.
 
 import argparse
-from . import parser
-from . import mongo
+from kasuga.parser import Parser
 
-'''
-    main
-'''
+
 def main():
-    aparser = argparse.ArgumentParser()
-    aparser.add_argument('-f', nargs='?', help='input text file', required=True)
-    aparser.add_argument('-m', nargs='?', help='J.Depp Dic directory', required=True)
-    args = aparser.parse_args()
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument('-f', nargs='?', help='input text file', required=True)
+    args = arg_parser.parse_args()
 
     for line in open(args.f, 'r'):
         # 改行文字の削除
         line = line.replace('\n', '')
 
-       # 「。」毎にパースを行う ※それ以外は未対応
+        # 「。」毎にパースを行う ※それ以外は未対応
         for context in line.replace("。", "。___").split("___"):
             if len(context) == 0:
                 continue
 
-            p = parser.Parser(args.m)
-            info = p.parse(context)
-            p.display(info)
+            p = Parser()
+            info = p(context)
+            print(info)
 
-            m = mongo.Mongo(args.f)
-            m.regist(info)
 
+if __name__ == "__main__":
+    main()
