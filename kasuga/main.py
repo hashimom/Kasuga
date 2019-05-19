@@ -20,12 +20,13 @@
 # SOFTWARE.
 
 import argparse
+import json
 from kasuga.parser import Parser
-
 
 def main():
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument('-f', nargs='?', help='input text file', required=True)
+    arg_parser.add_argument('-o', nargs='?', help='output json file')
     args = arg_parser.parse_args()
 
     for line in open(args.f, 'r'):
@@ -39,7 +40,11 @@ def main():
 
             p = Parser()
             info = p(context)
-            print(info)
+            if args.o:
+                with open(args.o, 'w') as f:
+                    json.dump(info, f, indent=4, ensure_ascii=False)
+            else:
+                print(info)
 
 
 if __name__ == "__main__":

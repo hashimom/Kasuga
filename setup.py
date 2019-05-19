@@ -24,7 +24,7 @@ import setuptools
 if __name__ == "__main__":
     setuptools.setup(
         name='kasuga',
-        version='0.3.0',
+        version='0.4.0',
         description='Text to Json script.',
         author='hashimom',
         author_email='hashimom@geeko.jp',
