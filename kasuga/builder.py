@@ -19,22 +19,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import setuptools
+import argparse
+from kasuga.reader import Reader
+
+
+class Builder:
+    def __init__(self):
+        self.infos = []
+
+    def read(self, in_file):
+        reader = Reader(in_file)
+        self.infos = reader()
+
+    def __call__(self):
+        for info in self.infos:
+            for chunk in info["Chunks"]:
+                pass
+
+
+def main():
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument('-f', nargs='?', help='input text file', required=True)
+    args = arg_parser.parse_args()
+
+    builder = Builder()
+    builder.read(args.f)
+
 
 if __name__ == "__main__":
-    setuptools.setup(
-        name='kasuga',
-        version='0.4.0',
-        description='Text to Json script.',
-        author='hashimom',
-        author_email='hashimom@geeko.jp',
-        url='https://github.com/hashimom/Kasuga',
-        license='MIT',
-        install_requires=['pyknp'],
-        packages=setuptools.find_packages(),
-        entry_points={
-            'console_scripts': [
-                'kasuga=kasuga.reader:main',
-            ],
-        },
-    )
+    main()

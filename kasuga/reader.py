@@ -23,28 +23,43 @@ import argparse
 import json
 from kasuga.parser import Parser
 
+
+class Reader:
+    def __init__(self, in_file, out_file=None):
+        self.in_file = in_file
+        self.out_file = out_file
+
+    def __call__(self):
+        infos = []
+
+        for line in open(self.in_file, 'r'):
+            # 改行文字の削除
+            line = line.replace('\n', '')
+
+            # 「。」毎にパースを行う ※それ以外は未対応
+            for context in line.replace("。", "。___").split("___"):
+                if len(context) == 0:
+                    continue
+
+                p = Parser()
+                info = p(context)
+                if self.out_file is not None:
+                    with open(self.out_file, 'w') as f:
+                        json.dump(info, f, indent=4, ensure_ascii=False)
+
+                infos.append(info)
+
+        return infos
+
+
 def main():
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument('-f', nargs='?', help='input text file', required=True)
     arg_parser.add_argument('-o', nargs='?', help='output json file')
     args = arg_parser.parse_args()
 
-    for line in open(args.f, 'r'):
-        # 改行文字の削除
-        line = line.replace('\n', '')
-
-        # 「。」毎にパースを行う ※それ以外は未対応
-        for context in line.replace("。", "。___").split("___"):
-            if len(context) == 0:
-                continue
-
-            p = Parser()
-            info = p(context)
-            if args.o:
-                with open(args.o, 'w') as f:
-                    json.dump(info, f, indent=4, ensure_ascii=False)
-            else:
-                print(info)
+    reader = Reader(args.f, args.o)
+    reader()
 
 
 if __name__ == "__main__":
