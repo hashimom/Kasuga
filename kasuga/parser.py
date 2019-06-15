@@ -38,7 +38,11 @@ class Parser:
         chunks = []
         links = []
 
-        result = self.knp.parse(text)
+        try:
+            result = self.knp.parse(text)
+        except Exception as e:
+            print("text \"" + text + "\" " + str(e))
+            return None
 
         # 単語配列生成
         for bnst in result.bnst_list():
@@ -49,7 +53,8 @@ class Parser:
                        "original": mrph.genkei,
                        "read": mrph.yomi,
                        "position": [mrph.hinsi, mrph.bunrui],
-                       "conjugate": [mrph.katuyou1, mrph.katuyou2]
+                       "conjugate": [mrph.katuyou1, mrph.katuyou2],
+                       "position_id": [mrph.hinsi_id, mrph.bunrui_id]
                        }
 
                 # 自立語
@@ -120,4 +125,5 @@ if __name__ == "__main__":
     """
     p = Parser()
     ret = p("あひる焼きを食べればモリモリと、元気が出るぞよ。")
-    p.display(ret)
+    if ret is not None:
+        p.display(ret)

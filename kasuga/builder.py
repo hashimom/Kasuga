@@ -20,6 +20,7 @@
 # SOFTWARE.
 
 import argparse
+import csv
 from kasuga.reader import Reader
 
 
@@ -29,12 +30,37 @@ class Builder:
 
     def read(self, in_file):
         reader = Reader(in_file)
-        self.infos = reader()
+        infos = reader()
+
+        f = open('input.csv', 'w')
+        writer = csv.writer(f, lineterminator='\n')
+
+        for info in infos:
+            for chunk in info["Chunks"]:
+                ind_surface = ""
+                anc_surface = ""
+                lnk_surface = ""
+
+                # Independent
+                if len(chunk["Independent"]) != 0 and not chunk["Link"] is None:
+                    for independent in chunk["Independent"]:
+                        ind_surface += independent["surface"]
+
+                    # Ancillary
+                    for ancillary in chunk["Ancillary"]:
+                        if ancillary["position"][0] != "特殊":
+                            anc_surface += ancillary["surface"]
+
+                    # Link
+                    for link in chunk["Link"]:
+                        lnk_surface += link["surface"]
+
+                    writer.writerow([ind_surface, anc_surface, lnk_surface])
+
+        f.close()
 
     def __call__(self):
-        for info in self.infos:
-            for chunk in info["Chunks"]:
-                pass
+        pass
 
 
 def main():

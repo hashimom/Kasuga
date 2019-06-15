@@ -43,11 +43,12 @@ class Reader:
 
                 p = Parser()
                 info = p(context)
-                if self.out_file is not None:
-                    with open(self.out_file, 'w') as f:
-                        json.dump(info, f, indent=4, ensure_ascii=False)
+                if info is not None:
+                    if self.out_file is not None:
+                        with open(self.out_file, 'w') as f:
+                            json.dump(info, f, indent=4, ensure_ascii=False)
 
-                infos.append(info)
+                    infos.append(info)
 
         return infos
 

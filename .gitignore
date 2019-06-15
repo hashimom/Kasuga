@@ -100,5 +100,9 @@ ENV/
 # mypy
 .mypy_cache/
 
+# sample
+sample/*
+kasuga/input.csv
+
 # for PyCharm
 .idea
