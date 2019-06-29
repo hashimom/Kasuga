@@ -40,7 +40,7 @@ class Parser:
         links = []
 
         try:
-            result = self.knp.parse(text.decode('utf-8'))
+            result = self.knp.parse(text)
         except Exception as e:
             print("text \"" + text + "\" " + str(e))
             return None
