@@ -22,6 +22,7 @@
 """
 import argparse
 import json
+import os
 from kasuga.parser import Parser
 
 
@@ -51,15 +52,22 @@ class Reader(object):
 
 
 class JsonWriter(Reader):
-    def __init__(self, in_file, out_file):
+    def __init__(self, in_file, out_dir):
         super().__init__(in_file, self.output_cb)
-        self.out_file = open(out_file, 'w')
+        self.in_file = in_file
+        self.out_dir = out_dir
+        self.cnt = 1
+        if not os.path.isdir(out_dir):
+            os.makedirs(out_dir)
 
     def __call__(self):
         super().__call__()
 
     def output_cb(self, info):
-        json.dump(info, self.out_file, indent=4, ensure_ascii=False)
+        file_name = self.out_dir + "/" + "json_" + "{:08d}".format(self.cnt) + ".json"
+        with open(file_name, 'w') as f:
+            json.dump(info, f, indent=2, ensure_ascii=False)
+            self.cnt += 1
 
 
 def main():
