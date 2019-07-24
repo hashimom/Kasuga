@@ -39,7 +39,10 @@ class PreBuilder:
         self.f_link = open(out_dir + "/link.csv", 'w')
         self.writer_link = csv.writer(self.f_link, lineterminator='\n')
 
+        self.f_words_file = out_dir + "/words.csv"
+
         self.in_dir = in_dir
+        self.word_info = {}
         self.jw = None
         if in_text is not None:
             self.jw = JsonWriter(in_text, in_dir)
@@ -55,6 +58,13 @@ class PreBuilder:
             with open(file, encoding="utf-8") as in_json:
                 info = json.load(in_json)
                 for chunk in info["Chunks"]:
+
+                    # Word info
+                    words = chunk["Independent"] + chunk["Ancillary"]
+                    for word in words:
+                        if not word["surface"] in self.word_info:
+                            self.word_info[word["surface"]] = [word["position_id"][0], word["position_id"][1]]
+
                     # TriGram info
                     trigram_info = self.make_trigram_info(chunk)
                     for trigram in trigram_info:
@@ -65,6 +75,11 @@ class PreBuilder:
                         link_info = self.make_link_info(chunk)
                         if link_info is not None:
                             self.writer_link.writerow(link_info)
+
+        with open(self.f_words_file, 'w') as f:
+            self.writer_words = csv.writer(f, lineterminator='\n')
+            for k, v in self.word_info.items():
+                self.writer_words.writerow([k, v[0], v[1]])
 
     @staticmethod
     def make_trigram_info(chunk):
