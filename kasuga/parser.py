@@ -55,8 +55,6 @@ class Parser:
                        "read": mrph.yomi,
                        "position": [mrph.hinsi, mrph.bunrui],
                        "conjugate": [mrph.katuyou1, mrph.katuyou2],
-                       "position_id": [mrph.hinsi_id, mrph.bunrui_id],
-                       "conjugate_id": [mrph.katuyou1_id, mrph.katuyou2_id]
                        }
 
                 # 自立語

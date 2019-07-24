@@ -26,6 +26,7 @@ import json
 import csv
 import glob
 from kasuga.reader import JsonWriter
+from kasuga.wordholder import WordHolder
 
 
 class PreBuilder:
@@ -42,7 +43,11 @@ class PreBuilder:
         self.f_words_file = out_dir + "/words.csv"
 
         self.in_dir = in_dir
-        self.word_info = {}
+        self.word_holder = WordHolder()
+        type_cnt = self.word_holder.type_list_cnt()
+        self.soc_type = type_cnt
+        self.eoc_type = [type_cnt[0], type_cnt[1]+1]
+
         self.jw = None
         if in_text is not None:
             self.jw = JsonWriter(in_text, in_dir)
@@ -52,19 +57,19 @@ class PreBuilder:
         if self.jw is not None:
             self.jw()
 
-        print("STEP2: CSV File Write...")
+        print("STEP2: CSV file Write...")
         file_list = glob.glob(self.in_dir + "/*.json")
         for file in file_list:
             with open(file, encoding="utf-8") as in_json:
                 info = json.load(in_json)
-                for chunk in info["Chunks"]:
 
-                    # Word info
+                # Word info
+                for chunk in info["Chunks"]:
                     words = chunk["Independent"] + chunk["Ancillary"]
                     for word in words:
-                        if not word["surface"] in self.word_info:
-                            self.word_info[word["surface"]] = [word["position_id"][0], word["position_id"][1]]
+                        self.word_holder.regist(word["surface"], word["position"][0], word["position"][1])
 
+                for chunk in info["Chunks"]:
                     # TriGram info
                     trigram_info = self.make_trigram_info(chunk)
                     for trigram in trigram_info:
@@ -78,43 +83,38 @@ class PreBuilder:
 
         with open(self.f_words_file, 'w') as f:
             self.writer_words = csv.writer(f, lineterminator='\n')
-            for k, v in self.word_info.items():
+            for k, v in self.word_holder.word_list.items():
                 self.writer_words.writerow([k, v[0], v[1]])
 
-    @staticmethod
-    def make_trigram_info(chunk):
+    def make_trigram_info(self, chunk):
         trigram = []
         words = chunk["Independent"] + chunk["Ancillary"]
         chunk_len = len(words)
         if chunk_len != 0:
             if chunk_len == 1:
-                trigram.append(["@SOC@", 0, 0,
-                                words[0]["surface"], words[0]["position_id"][0], words[0]["position_id"][1],
-                                "@EOC@", 0, 0])
+                word_info = self.word_holder(words[0]["surface"])
+                trigram.append(["@S@", self.soc_type[0], self.soc_type[1],
+                                word_info[0], word_info[1], word_info[2],
+                                "@E@", self.eoc_type[0], self.eoc_type[1]])
             else:
                 for i, word in enumerate(words):
                     if i == 0:
-                        tri_word = ["@SOC@", 0, 0]
+                        tri_word = ["@S@", self.soc_type[0], self.soc_type[1]]
                     else:
-                        tri_word = [words[i - 1]["surface"],
-                                    words[i - 1]["position_id"][0],
-                                    words[i - 1]["position_id"][1]]
+                        tri_word = self.word_holder(words[i - 1]["surface"])
 
-                    tri_word.extend([word["surface"], word["position_id"][0], word["position_id"][1]])
+                    tri_word.extend(self.word_holder(word["surface"]))
 
                     if (i + 1) == chunk_len:
-                        tri_word.extend(["@EOC@", 0, 0])
+                        tri_word.extend(["@E@", self.eoc_type[0], self.eoc_type[1]])
                     else:
-                        tri_word.extend([words[i + 1]["surface"],
-                                         words[i + 1]["position_id"][0],
-                                         words[i + 1]["position_id"][1]])
+                        tri_word.extend(self.word_holder(words[i + 1]["surface"]))
 
                     trigram.append(tri_word)
 
         return trigram
 
-    @staticmethod
-    def make_link_info(chunk):
+    def make_link_info(self, chunk):
         ind_phase = ""
         lnk_phase = ""
         ind_position = [None, None]
@@ -122,29 +122,33 @@ class PreBuilder:
 
         # Independent
         if len(chunk["Independent"]) == 1:
-            ind_phase = chunk["Independent"][0]["surface"]
-            ind_position = chunk["Independent"][0]["position_id"]
+            word_info = self.word_holder(chunk["Independent"][0]["surface"])
+            ind_phase = word_info[0]
+            ind_position = [word_info[1], word_info[2]]
         else:
             for independent in chunk["Independent"]:
                 ind_phase += independent["surface"]
 
         # Ancillary
         if len(chunk["Ancillary"]) == 1 and chunk["Ancillary"][0]["position"][0] != "特殊":
-            anc_phase = chunk["Ancillary"][0]["surface"]
-            anc_position = chunk["Ancillary"][0]["position_id"]
+            word_info = self.word_holder(chunk["Ancillary"][0]["surface"])
+            anc_phase = word_info[0]
+            anc_position = [word_info[1], word_info[2]]
         else:
             return None
 
         # Link
         if len(chunk["Ancillary"]) == 1:
+            word_info = self.word_holder(chunk["Link"][0]["surface"])
             lnk_phase = chunk["Link"][0]["original"]
-            lnk_position = chunk["Link"][0]["position_id"]
+            lnk_position = [word_info[1], word_info[2]]
         else:
             for i, link in enumerate(chunk["Link"]):
                 if i == 0:
                     if link["position"][0] == "動詞" or link["position"][0] == "形容詞":
+                        word_info = self.word_holder(link["surface"])
                         lnk_phase = link["original"]
-                        lnk_position = link["position_id"]
+                        lnk_position = [word_info[1], word_info[2]]
                         break
                 lnk_phase += link["original"]
 
