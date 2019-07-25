@@ -20,6 +20,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  SOFTWARE.
 """
+import numpy as np
 
 WORD_TYPE_LIST = [
     [
@@ -94,14 +95,31 @@ class WordHolder:
         self.word_list = {}
 
     def __call__(self, surface):
-        return [surface, self.word_list[surface][0], self.word_list[surface][1]]
+        return [surface, self.word_list[surface]["type1"], self.word_list[surface]["type2"]]
 
     def regist(self, surface, type1, type2):
         if not surface in self.word_list:
+            word_id = np.random.randint(0, 65535)
             if type2 != "*":
-                self.word_list[surface] = [WORD_TYPE_LIST[0].index(type1), WORD_TYPE_LIST[1].index(type2)]
+                self.word_list[surface] = {"id": word_id,
+                                           "type1": WORD_TYPE_LIST[0].index(type1),
+                                           "type2": WORD_TYPE_LIST[1].index(type2)}
             else:
-                self.word_list[surface] = [WORD_TYPE_LIST[0].index(type1), WORD_TYPE_LIST[0].index(type1)]
+                self.word_list[surface] = {"id": word_id,
+                                           "type1": WORD_TYPE_LIST[0].index(type1),
+                                           "type2": WORD_TYPE_LIST[0].index(type1)}
+
+    @staticmethod
+    def get_rand_id(word_id):
+        ret_ary = []
+        tmp = word_id
+        for i in range(16):
+            if tmp & 1:
+                ret_ary.append(1)
+            else:
+                ret_ary.append(0)
+            tmp = tmp >> 1
+        return ret_ary
 
     @staticmethod
     def type_list_cnt():

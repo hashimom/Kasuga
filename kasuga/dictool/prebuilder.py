@@ -84,7 +84,7 @@ class PreBuilder:
         with open(self.f_words_file, 'w') as f:
             self.writer_words = csv.writer(f, lineterminator='\n')
             for k, v in self.word_holder.word_list.items():
-                self.writer_words.writerow([k, v[0], v[1]])
+                self.writer_words.writerow([k, v["id"], v["type1"], v["type2"]])
 
     def make_trigram_info(self, chunk):
         trigram = []
