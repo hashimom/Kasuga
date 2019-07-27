@@ -81,10 +81,7 @@ class PreBuilder:
                         if link_info is not None:
                             self.writer_link.writerow(link_info)
 
-        with open(self.f_words_file, 'w') as f:
-            self.writer_words = csv.writer(f, lineterminator='\n')
-            for k, v in self.word_holder.word_list.items():
-                self.writer_words.writerow([k, v["id"], v["type1"], v["type2"]])
+        self.word_holder.save(self.f_words_file)
 
     def make_trigram_info(self, chunk):
         trigram = []
@@ -140,7 +137,8 @@ class PreBuilder:
         # Link
         if len(chunk["Ancillary"]) == 1:
             word_info = self.word_holder(chunk["Link"][0]["surface"])
-            lnk_phase = chunk["Link"][0]["original"]
+            # lnk_phase = chunk["Link"][0]["original"]
+            lnk_phase = chunk["Link"][0]["surface"]
             lnk_position = [word_info[1], word_info[2]]
         else:
             for i, link in enumerate(chunk["Link"]):

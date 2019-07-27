@@ -20,6 +20,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  SOFTWARE.
 """
+import csv
 import numpy as np
 
 WORD_TYPE_LIST = [
@@ -91,8 +92,15 @@ WORD_TYPE_LIST = [
 
 
 class WordHolder:
-    def __init__(self):
+    def __init__(self, list_file=None):
         self.word_list = {}
+
+        # word file read
+        if list_file is not None:
+            with open(list_file, "r", encoding="utf-8") as f:
+                reader = csv.reader(f, delimiter=",")
+                for row in reader:
+                    self.word_list[row[0]] = {"id": row[1], "type1": row[2], "type2": row[3]}
 
     def __call__(self, surface):
         return [surface, self.word_list[surface]["type1"], self.word_list[surface]["type2"]]
@@ -108,6 +116,12 @@ class WordHolder:
                 self.word_list[surface] = {"id": word_id,
                                            "type1": WORD_TYPE_LIST[0].index(type1),
                                            "type2": WORD_TYPE_LIST[0].index(type1)}
+
+    def save(self, filename):
+        with open(filename, 'w') as f:
+            writer = csv.writer(f, lineterminator='\n')
+            for k, v in self.word_list.items():
+                writer.writerow([k, v["id"], v["type1"], v["type2"]])
 
     @staticmethod
     def get_rand_id(word_id):
