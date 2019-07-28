@@ -22,6 +22,7 @@
 """
 import csv
 import numpy as np
+import tensorflow as tf
 
 WORD_TYPE_LIST = [
     [
@@ -90,10 +91,14 @@ WORD_TYPE_LIST = [
     ]
 ]
 
+WORD_ID_BIT_NUM = 16
+
 
 class WordHolder:
     def __init__(self, list_file=None):
         self.word_list = {}
+        self.type1_one_hot = np.eye(len(WORD_TYPE_LIST[0]))
+        self.type2_one_hot = np.eye(len(WORD_TYPE_LIST[1]))
 
         # word file read
         if list_file is not None:
@@ -103,7 +108,19 @@ class WordHolder:
                     self.word_list[row[0]] = {"id": row[1], "type1": row[2], "type2": row[3]}
 
     def __call__(self, surface):
-        return [surface, self.word_list[surface]["type1"], self.word_list[surface]["type2"]]
+        id_ary = []
+        tmp = int(self.word_list[surface]["id"])
+        for i in range(WORD_ID_BIT_NUM):
+            if tmp & 1:
+                id_ary.append(1.)
+            else:
+                id_ary.append(0.)
+            tmp = tmp >> 1
+
+        ret_ary = np.array(id_ary, dtype="float")
+        ret_ary = np.hstack((ret_ary, self.type1_one_hot[int(self.word_list[surface]["type1"])]))
+        ret_ary = np.hstack((ret_ary, self.type2_one_hot[int(self.word_list[surface]["type2"])]))
+        return ret_ary
 
     def regist(self, surface, type1, type2):
         if not surface in self.word_list:
@@ -118,22 +135,10 @@ class WordHolder:
                                            "type2": WORD_TYPE_LIST[0].index(type1)}
 
     def save(self, filename):
-        with open(filename, 'w') as f:
+        with open(filename, 'w', encoding="utf-8") as f:
             writer = csv.writer(f, lineterminator='\n')
             for k, v in self.word_list.items():
                 writer.writerow([k, v["id"], v["type1"], v["type2"]])
-
-    @staticmethod
-    def get_rand_id(word_id):
-        ret_ary = []
-        tmp = word_id
-        for i in range(16):
-            if tmp & 1:
-                ret_ary.append(1)
-            else:
-                ret_ary.append(0)
-            tmp = tmp >> 1
-        return ret_ary
 
     @staticmethod
     def type_list_cnt():

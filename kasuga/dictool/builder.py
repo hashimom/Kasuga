@@ -27,68 +27,68 @@ import tensorflow as tf
 from kasuga.dictool.wordvector import WordVector
 from kasuga.wordholder import WordHolder
 
+WORD_PHRASE_NUM = 4
+WORD_ID_BIT_NUM = 16
+
 
 class Builder:
     def __init__(self, word_file, link_file):
+        # DNN define
+        hid_dim = 128
+        z_dim = 32
+        hid_num = 2
+
         self.word_holder = WordHolder(word_file)
+        type1_cnt, type2_cnt = self.word_holder.type_list_cnt()
         self.link_list = []
         with open(link_file, encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=",")
             for row in reader:
-                self.link_list.append([row[0], row[1], row[2]])
+                self.link_list.append(row)
 
-        self.model = WordVector(48, 16, 8, 2)
+        self.model = WordVector(hid_dim, z_dim, hid_num, WORD_ID_BIT_NUM, type1_cnt, type2_cnt, WORD_PHRASE_NUM)
         self.optimizer = tf.optimizers.Adam()
 
     def __call__(self, epoch_num, batch_size):
         for i in range(epoch_num):
-            links, batch = self.make_batch(200)
-            y, loss = self.train_step(batch)
-            print("step " + str(i) + ": " + str(loss))
+            batch_list = self.make_batch_list(batch_size)
+            batch = self.make_batch(batch_list, batch_size)
+            with tf.GradientTape() as tape:
+                score, y = self.model.score(batch)
+            grads = tape.gradient(score, self.model.trainable_variables)
+            self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+            print(str(i) + ":  score= " + str(score))
 
-            self.update_word_id(links, y)
+            self.update_word_id(batch_list, y)
+        self.word_holder.save("../../sample/updated_words.csv")
 
-    @tf.function
-    def train_step(self, x_data):
-        with tf.GradientTape() as tape:
-            y = self.model(x_data)
-            loss = tf.reduce_mean(tf.square(y - x_data))
-        grads = tape.gradient(loss, self.model.trainable_variables)
-        self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
-        return y, loss
-
-    def make_batch(self, batch_size):
-        links = []
-        batch = []
+    def make_batch_list(self, batch_size):
+        batch_list = []
         rand_list = np.random.randint(0, len(self.link_list), batch_size)
         for i in rand_list:
-            link = self.link_list[i]
-            links.append(link)
-            batch.append(self.word2vector(link[0]) + self.word2vector(link[1]) + self.word2vector(link[2]))
-        return links, batch
+            batch_list.append(self.link_list[i])
+        return batch_list
 
-    def word2vector(self, word):
-        ret_ary = []
-        if not word in self.word_holder.word_list:
-            self.word_holder.regist(word, "未定義語", "その他")
+    def make_batch(self, batch_list, batch_size):
+        batch = np.empty((batch_size, 304), dtype="float")
+        for i, x in enumerate(batch_list):
+            word_id = np.empty((WORD_PHRASE_NUM, 76), dtype="float")
+            for j in range(WORD_PHRASE_NUM):
+                if not x[j] in self.word_holder.word_list:
+                    self.word_holder.regist(x[j], "未定義語", "その他")
+                word_id[j] = self.word_holder(x[j])
+            batch[i] = word_id.reshape(1, 304)
+        return batch
 
-        word_id = int(self.word_holder.word_list[word]["id"])
-        for i in range(16):
-            if word_id & 1:
-                ret_ary.append(1.)
-            else:
-                ret_ary.append(0.)
-            word_id = word_id >> 1
-        return ret_ary
-
-    def update_word_id(self, links, y):
-        for i, link in enumerate(links):
-            y_tmp = np.reshape(y[i], (3, 16))
+    def update_word_id(self, batch_list, y):
+        for i, link in enumerate(batch_list):
+            y_word_ary = np.reshape(y[i], (WORD_PHRASE_NUM, 76))
             for j, word in enumerate(link):
                 new_id = 0
-                y_mean = tf.reduce_mean(y_tmp[j])
-                for k in range(16):
-                    if y_tmp[j][k] > y_mean:
+                y_word = y_word_ary[j][:WORD_ID_BIT_NUM]
+                y_mean = tf.reduce_mean(y_word)
+                for val in y_word:
+                    if val > y_mean:
                         new_id += 1
                     new_id = new_id << 1
                 self.word_holder.word_list[word]["id"] = int(new_id)
