@@ -34,9 +34,9 @@ WORD_ID_BIT_NUM = 16
 class Builder:
     def __init__(self, word_file, link_file):
         # DNN define
-        hid_dim = 128
-        z_dim = 32
-        hid_num = 2
+        hid_dim = 64
+        z_dim = 16
+        hid_num = 1
 
         self.word_holder = WordHolder(word_file)
         type1_cnt, type2_cnt = self.word_holder.type_list_cnt()
@@ -61,6 +61,8 @@ class Builder:
 
             self.update_word_id(batch_list, y)
         self.word_holder.save("../../sample/updated_words.csv")
+
+        tf.saved_model.save(self.model, "../../sample/model/")
 
     def make_batch_list(self, batch_size):
         batch_list = []
